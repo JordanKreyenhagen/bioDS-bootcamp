@@ -1,0 +1,187 @@
+---
+title: "Organized Data Evaluation"
+author: "Jordan Kreyenhagen"
+date: "August 15, 2018"
+output: pdf_document
+---
+
+```{r Load packages for expanded function use}
+library("ggpubr")
+library("ggplot2")
+library("dplyr")
+library("tidyr")
+options(stringsAsFactors = FALSE)
+```
+
+Loading in: "ggpubr", "ggplot2", "dplyr", "tidyr" for expanded function use that will be required for future data analization and formatting 
+
+```{r Defining and analyzing "Log2.Expn"}
+Log2.Expn <- read.csv("TARGET_AML_1031_DS.AML_HTSeq_Hg38_TMMCPM_norm_counts.csv", row.names = 1)
+head(Log2.Expn)
+dim(Log2.Expn)
+class(Log2.Expn)
+```
+
+Defining and anlyzing a new variable "Log.2.Expn" (dataframe) which is set to the normalized counts from the most recent RNA-Seq experiment (Note: be sure that when reading in a file from Github Desktop or any other format, quotes are needed to tab complete selection). Analyzing "Log2.Expn" with functions: head() and dim().
+
+```{r Read in the clinical data elements (CDE) file}
+CDE <- read.csv("TARGET_AML_1031_M7s_DS-AML_CDE (1).csv")
+head(CDE)
+dim(CDE)
+class(CDE)
+```
+
+Defining and analyzing a new variable "CDE" (dataframe) which is set to the clinical data elements. Analyzing "CDE" with functions: head(), dim(), and class().
+
+```{r Read in Differentially expressed genes (DEGs) list (definition and analyzation included)}
+DEGs <- read.csv("TARGET_AML_1031_DS.AML_vs_M7s_DEGs.csv")
+head(DEGs)
+dim(DEGs)
+class(DEGs)
+```
+
+Defining and analyzing a new variable "DEGs" (dataframe) which is set to diferentially expressed genes. Analyzing "DEGs" with functions: head(), dim(), and class().
+
+```{r Read in chr.21.ref for a list of genes on chromosome 21 (definition and analyzation included)}
+ref <- read.delim("Homo_Sapiens_Entrez_Gene_IDs.txt")
+row.indices <- grep("^21[p,q]", ref$Chromosome)
+chr.21.ref <- ref[row.indices,]
+head(chr.21.ref)
+dim(chr.21.ref)
+class(chr.21.ref)
+```
+
+(Note: had to go back to previous programming practice to find "chr.21.ref" definition due to the fact that "Chromosome_21_Reference.csv" reference file did not read over). Defining and analyzing "chr.21.ref" (dataframe) which is set to intersecting character strings from both: "row.indices" and "ref" -> a list of genes that are present on chromosome 21. Analyzation for "chr.21.ref" was done through the use of functions: head(), dim(), and class().
+
+```{r Using the genes in chr.21.ref, find how many DEGs were on chr.21 (defining line process and analyzation included)}
+chr.21.DEGs <- DEGs %>%
+  filter(., Gene %in% chr.21.ref$Approved.Symbol)
+head(chr.21.DEGs)
+dim(chr.21.DEGs)
+class(chr.21.DEGs)
+```
+
+##What is the dot ".", indicating to the function filter()?
+It is representing the dataframe that is piped into to the function. Basically saying `filter this DEGs dataframe`, but DEGs is represented as a ".". Then you never have to write out the whole variable name again, DEGs. In the first line of the coding segment above, "chr.21.DEGs" is being set as a varibale equal to "DEGs" before it has been piped through the function filter(). The second line is filtering the dataframe "DEGs" for a match of the elements that correspond with the "Approved.Symbol" column from the "chr.21.ref" dataframe. The last three lines show analysis of the dataframe "chr.21.DEGs" using the functions: head(), dim(), and class().
+
+```{r ggplot and dplyr packages *DO NOT* use rownames, we will create a new dataframe to solve this problem (defining line process and analyzation included).}
+Gene.Names <- rownames(Log2.Expn)
+Log2.Expn.df <- Log2.Expn %>%
+  mutate(., Gene = Gene.Names)
+head(Log2.Expn.df)
+dim(Log2.Expn.df)
+class(Log2.Expn.df)
+```
+
+In the first line of the coding segment above, "Gene.Names" is being set as variable equal to the rownames() of the dataframe "Log2.Expn". In the second line of the segment above, "Log2.Expn.df" is being defined as a new variable which is equal to the dataframe "Log2.Expn" before it has been piped through the function mutate(). The third line of the segment above is mutating the "Log2.Expn" dataframe to add a new variable (in this case a column-I am unsure if you can add any other variables like rows, but I believe it pertains to just columns) listed as "Gene" which makes sense because its set equal to "Gene.Names" inside the mutate function which was defined earlier in the first line of the segment above. The last three lines of coding are just analyzing "Log2.Expn.df"by using functions: head(), dim(), and class().
+
+```{r We need to subset the clinical information to the few columns we will use for our analysis (defining line process qand analyzation included).}
+CDE.subset <- CDE %>%
+  select(Sample,group)
+head(CDE.subset)
+dim(CDE.subset)
+class(CDE.subset)
+```
+
+In the first line of the coding segment above, "CDE.subset"is being set equal to the dataframe "CDE" before it has been piped through the function select. The second line from the segment above is using the function select() to keep all the variables that are mentioned inside of the function and get rid of all the ones that are not mentioned (I am unsure if you can mention any other variables like rows, but I believe it pertains to just columns). The rest of the code is just analysis of "CDE.subset" using functions: head(), dim(), and class().
+
+```{r Create a New Expression Dataframe with Added Clinical Information}
+ITGA2B.Expn <- Log2.Expn.df %>%
+  filter(., Gene %in% c("ITGA2B")) %>%
+  gather(., key = Sample, value = Log2.Expression.Value,-Gene) %>%
+  inner_join(., CDE.subset, by="Sample")
+head(ITGA2B.Expn)
+dim(ITGA2B.Expn)
+class(ITGA2B.Expn)
+```
+
+#We need to filter the Expression Data for one of your "genes of interest".
+#Then we will create a long-format dataframe, with a SINGLE column to hold ALL expression counts values, for all patient samples.
+#Finally, add in the clinical information.
+#lets just start with the first DEG in the DEGs dataframe called "ITGA2B".
+In the first line of the code segment above, "ITGA2B.Expn" is being set equal to the dataframe "Log2.Expn.df" before it has been piped through the filter() function. The second line of code from the segment above is filtering "ITGA2B.Expn" to see if there are any matches bewteen the "Gene" column and the gene name "ITGA2B". the third line is taking the previous lines filtered data and combining all of the columns together into one column except for "Gene" and calling it "Sample". It then creates another column to store all the values of this previous column called "Log2.Expression.Value". The "-Gene" at the end is making it so gather() doesnt get rid of all other columns to just have "Log2.Expression.Value" and "Sample" as columns but also "Gene". The fourth line is adding the column "group to the dataframe". The last few lines of code are just meant for analysis of "ITGA2B.Expn" through the functions: head(), dim(), and class().
+
+```{r creating a boxplot for "ITGA2B.Expn" dataframe}
+box1 <- ggplot(ITGA2B.Expn, aes(x= group, y= Log2.Expression.Value, color= group)) +
+  geom_boxplot() +
+  theme_classic()
+box1
+```
+
+This boxplot shows us that in the group "DS" there was a much smaller expression value in comparison to the group "M7".
+
+```{r Saving box1 as a pdf}
+pdf("box1.pdf")
+box1 <- ggplot(ITGA2B.Expn, aes(x= group, y= Log2.Expression.Value, color= group)) +
+  geom_boxplot() +
+  theme_classic()
+dev.off()
+```
+
+In this segment above I am saving the boxplot "box1" as a .pdf in my files. 
+
+
+```{r Practice (reestablishment) with "mtcars" (analyzation included)}
+data("mtcars")
+head(mtcars)
+dim(mtcars)
+class(mtcars)
+```
+
+getting a better perspective on function through practice with mtcars.
+
+```{r Continued reestablishment with "mtcars" (definition and analyzation included)}
+cars <- rownames(mtcars)
+mtcars.df <- mtcars %>%
+  mutate(name = cars)
+head(mtcars.df)
+dim(mtcars.df)
+class(mtcars.df)
+```
+
+getting a better perspective on function through practice with mtcars. The first line is defining the variable "cars" as equal to the rownames() of "mtcars". The second line is defining "mtcars.df" as equal to "mtcars" before it has been piped down through the mutate function. The third line is adding a new variable (column) called "name" which is equal to the variable "cars". The reast of the lines are analyzing the "mtcars.df" dataframe using the functions: head(), dim(), and class().
+
+```{r Figuring out the usage of "ggbarplot" with mtcars (defining line process and analyzation included).}
+ggbarplot(mtcars.df, x = "name", y = "mpg", 
+          fill = "cyl",               
+          color = "white",            
+          sort.val = "desc",          
+          sort.by.groups = TRUE,      
+          x.text.angle = 90)
+```
+
+# change fill color by column "cyl".
+# Set bar border colors to white
+# Sort the values in descending order
+# sort inside each group
+# Rotate vertically x axis texts
+Practicing the use of functions with "mtcars". The first line is creating a barplot with the x-axis being listed as the variable "name" and the y-axis as the variable "mpg". The second line is going to set the "fill" to "cyl". The third line is going to set the "color" to "white". The fourth line is going to set the "sort.val" to "desc" (descending). The fith line is going to cause the groups to be sorted together. The sixth line is going to take the text on the x axis and turn it 90 degrees.
+
+```{r creating a bar graph for "ITGA2B.Expn"}
+bar1 <- ggbarplot(ITGA2B.Expn, x = "Sample", y = "Log2.Expression.Value", 
+          fill = "group",             
+          color = "group",            
+          sort.val = "desc",         
+          sort.by.groups = TRUE,  
+          x.text.angle = 90)
+bar1
+```
+
+In this sement above I am creating a bar graph for the dataframe "ITGA2B.Expn" and adding code that makes the fill color and normal color "group" oriented. Additional code is being used to format writing angles and the assortment of variables by group.
+
+```{r Saving "bar1" as a .pdf in my files}
+pdf("bar1.pdf")
+bar1 <- ggbarplot(ITGA2B.Expn, x = "Sample", y = "Log2.Expression.Value", 
+          fill = "group",             
+          color = "group",            
+          sort.val = "desc",         
+          sort.by.groups = TRUE,  
+          x.text.angle = 90)
+dev.off()
+```
+
+This segment is saving the my created barplot "bar1" as a .pdf in my files.
+
+
+
+
