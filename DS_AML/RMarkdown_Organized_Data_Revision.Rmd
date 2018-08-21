@@ -2,7 +2,9 @@
 title: "Organized Data Evaluation"
 author: "Jordan Kreyenhagen"
 date: "August 15, 2018"
-output: pdf_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r Load packages for expanded function use}
@@ -75,7 +77,7 @@ class(Log2.Expn.df)
 
 In the first line of the coding segment above, "Gene.Names" is being set as variable equal to the rownames() of the dataframe "Log2.Expn". In the second line of the segment above, "Log2.Expn.df" is being defined as a new variable which is equal to the dataframe "Log2.Expn" before it has been piped through the function mutate(). The third line of the segment above is mutating the "Log2.Expn" dataframe to add a new variable (in this case a column-I am unsure if you can add any other variables like rows, but I believe it pertains to just columns) listed as "Gene" which makes sense because its set equal to "Gene.Names" inside the mutate function which was defined earlier in the first line of the segment above. The last three lines of coding are just analyzing "Log2.Expn.df"by using functions: head(), dim(), and class().
 
-```{r We need to subset the clinical information to the few columns we will use for our analysis (defining line process qand analyzation included).}
+```{r We need to subset the clinical information to the few columns we will use for our analysis (defining line process and analyzation included).}
 CDE.subset <- CDE %>%
   select(Sample,group)
 head(CDE.subset)
@@ -181,6 +183,40 @@ dev.off()
 ```
 
 This segment is saving the my created barplot "bar1" as a .pdf in my files.
+
+```{r New plot views without Log2FC values}
+ITGA2B.Expn.New <- ITGA2B.Expn %>%
+ mutate(., ExpressionValue = 2^Log2.Expression.Value)
+head(ITGA2B.Expn.New)
+dim(ITGA2B.Expn.New)
+class(ITGA2B.Expn.New)
+```
+
+
+
+```{r A new barplot for data without Log2FC}
+bar2 <- ggbarplot(ITGA2B.Expn.New, x = "Sample", y = "ExpressionValue", 
+          fill = "group",             
+          color = "group",            
+          sort.val = "desc",         
+          sort.by.groups = TRUE,  
+          x.text.angle = 90)
+bar2
+```
+
+
+
+```{r A new boxplot for data without Log2FC}
+box2 <- ggplot(ITGA2B.Expn.New, aes(x= group, y= ExpressionValue, color= group)) +
+  geom_boxplot() +
+  theme_classic()
+box2
+```
+
+
+
+
+
 
 
 
