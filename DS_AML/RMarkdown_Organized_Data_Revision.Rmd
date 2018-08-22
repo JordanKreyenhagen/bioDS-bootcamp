@@ -215,7 +215,154 @@ box2
 
 
 
+```{r Defining a table for new genes: IGF2BP1}
+IGF2BP1.Expn <- Log2.Expn.df %>%
+  filter(., Gene %in% c("IGF2BP1")) %>%
+  gather(., key = Sample, value = Log2.Expression.Value,-Gene) %>%
+  inner_join(., CDE.subset, by="Sample")
+head(IGF2BP1.Expn)
+dim(IGF2BP1.Expn)
+class(IGF2BP1.Expn)
+```
 
+
+
+```{r Defining a table for new genes}
+IGF2BP1.Expn.New <- IGF2BP1.Expn %>%
+ mutate(., ExpressionValue = 2^Log2.Expression.Value)
+head(IGF2BP1.Expn.New)
+dim(IGF2BP1.Expn.New)
+class(IGF2BP1.Expn.New)
+```
+
+
+
+
+```{r Defining a table for new genes: IGF2BP1}
+IGF2BP1.Expn.New <- IGF2BP1.Expn %>%
+ mutate(., ExpressionValue = 2^Log2.Expression.Value)
+head(IGF2BP1.Expn.New)
+dim(IGF2BP1.Expn.New)
+class(IGF2BP1.Expn.New)
+```
+
+
+
+```{r Defining rownames}
+
+```
+
+
+
+```{r Defining a table for new genes: MARCH4}
+MARCH4.Expn <- Log2.Expn.df %>%
+  filter(., Gene %in% c("MARCH4")) %>%
+  gather(., key = Sample, value = Log2.Expression.Value,-Gene) %>%
+  inner_join(., CDE.subset, by="Sample")
+head(MARCH4.Expn)
+dim(MARCH4.Expn)
+class(MARCH4.Expn)
+```
+
+
+
+```{r Defining a table for new genes: MARCH 4}
+MARCH4.Expn.New <- MARCH4.Expn %>%
+ mutate(., ExpressionValue = 2^Log2.Expression.Value)
+head(MARCH4.Expn.New)
+dim(MARCH4.Expn.New)
+class(MARCH4.Expn.New)
+```
+
+
+
+```{r defining all genes data}
+all.genes <- read.csv("TARGET_AML_1031_DS.AML_vs_M7s_allGenesTested.csv")
+head(Vplot.AllGenes)
+```
+
+
+
+```{r creating a volcano plot for all the genes (definition and analyzation of each line included)}
+all.genes.updated <- all.genes%>%
+  
+  mutate(Neg.Log10.P= -log10(pValue)) %>%
+  
+  mutate(DEGs.Groups=case_when(
+            FoldChange > 2.0 & pValue < 0.05 ~ "FC Greater than 2",
+            FoldChange < -2.0 & pValue < 0.05 ~ "FC Less than 2",
+            TRUE ~ "Not Significant FC"))
+head(all.genes.updated)
+```
+
+
+
+```{r creating a volcano plot for all the genes (definition and analyzation of each line included)...}
+table(all.genes.updated[, "FoldChange"])
+volcano1 <- ggplot(all.genes.updated, aes(x="logFC", y="Neg.Log10.P", color="DEGs.Groups")) +
+  geom_point() + geom_vline(xintercept=c(-1,1)) + geom_hline(yintercept = -log10(0.05)) +
+  scale_color_manual(values=c("FC Greater than 2"="red", "FC Less than 2"="blue",                                  "Not Significant FC"="darkgrey")) + theme_bw()
+volcano1
+```
+
+
+
+```{r Saving volcano1 plot as a pdf}
+pdf("volcano1.pdf")
+
+volcano1 <- ggplot(all.genes.updated, aes(x=logFC, y=Neg.Log10.P, color=DEGs.Groups)) +
+  geom_point() + 
+  geom_vline(xintercept=c(-1,1)) + 
+  geom_hline(yintercept = -log10(0.05)) +
+  scale_color_manual(values=c("FC Greater than 2"="red", 
+                              "FC Less than 2"="blue",                                  
+                              "Not Significant FC"="darkgrey")) + 
+  theme_bw()
+
+volcano1
+dev.off
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+library(dplyr)
+head(DEGs)
+SortedDEGs <- arrange(DEGs, logFC, pValue)
+tail(SortedDEGs)
+head(SortedDEGs)
+```
 
 
 
